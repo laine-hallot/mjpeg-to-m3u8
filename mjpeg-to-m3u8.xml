@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>mjpeg-to-m3u8</Name>
+  <Description>Restream an MJPEG source as a m3u8 stream</Description>
+  <Repository>ghcr.io/laine-hallot/mjpeg-to-m3u8:latest</Repository>
+  <Registry>https://ghcr.io</Registry>
+  <Network>bridge</Network>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/laine-hallot/mjpeg-to-m3u8/issues</Support>
+  <Project>https://github.com/laine-hallot/mjpeg-to-m3u8</Project>
+  <Category>Media Applications</Category>
+
+  <PostArgs>node ./dist/index.js --out-dir ./out --stream-url $STREAM_URL</PostArgs>
+
+  <Config Name="Port" Target="8067" Default="8067" Mode="tcp" Description="Container Port: 8067" Type="port" Display="always" Required="true" Mask="false"></Config>
+
+  <Environment>
+    <Variable Name="NODE_ENV" Value="production" Mode=""/>
+    <Variable Name="CE_DOCKER" Value="true" Mode=""/>
+    <Variable Name="CUSTOM_CE_SOURCE" Value="github/mjpeg-to-m3u8" Mode=""/>
+  </Environment>
+
+  
+
+  <Labels>
+    <Label Name="net.unraid.docker.managed" Value="dockersystem" />
+    <Label Name="net.unraid.docker.webui" Value="http://[IP]:[PORT:8067]/" />
+    <Label Name="net.unraid.docker.icon" Value="https://raw.githubusercontent.com/laine-hallot/mjpeg-to-m3u8/main/assets/logo.png" />
+  </Labels>
+</Container>
