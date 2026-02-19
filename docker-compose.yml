@@ -1,0 +1,8 @@
+services:
+  stream:
+    build: .
+    environment:
+      - STREAM_URL=${STREAM_URL:?error}
+    ports:
+      - "8067:8067"
+    restart: unless-stopped

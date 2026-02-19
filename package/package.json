@@ -1,0 +1,30 @@
+{
+  "name": "mjpeg-to-m3u8",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "bin": {
+    "mjpeg-to-m3u8": "./bin/mjpeg-to-m3u8"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@optique/config": "^0.10.3",
+    "@optique/core": "^0.10.3",
+    "@optique/man": "^0.10.3",
+    "@optique/run": "^0.10.3",
+    "@optique/zod": "^0.10.3",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.3.0",
+    "prettier": "^3.8.1",
+    "typescript": "^6.0.0-beta"
+  }
+}
