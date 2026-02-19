@@ -3,6 +3,7 @@ services:
     build: .
     environment:
       - STREAM_URL=${STREAM_URL:?error}
+    command: "node ./dist/index.js --out-dir ./out --stream-url $STREAM_URL"
     ports:
       - "8067:8067"
     restart: unless-stopped

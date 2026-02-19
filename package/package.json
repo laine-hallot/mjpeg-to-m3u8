@@ -7,10 +7,11 @@
     "mjpeg-to-m3u8": "./bin/mjpeg-to-m3u8"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "run:dev": "node ./dist/index.js -- --out-dir ./out/"
   },
   "keywords": [],
-  "author": "",
+  "author": "Laine Hallot",
   "license": "ISC",
   "type": "module",
   "dependencies": {
@@ -19,11 +20,13 @@
     "@optique/man": "^0.10.3",
     "@optique/run": "^0.10.3",
     "@optique/zod": "^0.10.3",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "serve-index": "^1.9.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^25.3.0",
+    "@types/serve-index": "^1.9.4",
     "prettier": "^3.8.1",
     "typescript": "^6.0.0-beta"
   }

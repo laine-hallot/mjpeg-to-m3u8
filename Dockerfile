@@ -1,10 +1,13 @@
 # Dockerfile
 FROM linuxserver/ffmpeg:latest
 
-RUN apt-get update && apt-get install -y python3 && rm -rf /var/lib/apt/lists/*
-
-COPY ffmpeg-stream.sh /ffmpeg-stream.sh
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
+  && apt-get install -y nodejs
+COPY package/ /app/
 
 RUN mkdir -p /tmp/stream
 
-CMD ["/bin/sh", "-c", "python3 -m http.server 8067 --directory /tmp/stream & /ffmpeg-stream.sh"]
+WORKDIR /app/
+
+ENTRYPOINT []
+CMD ["/bin/sh", "-c", "node dist/index.js --out-dir /tmp/stream"]
