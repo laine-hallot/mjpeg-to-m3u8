@@ -1,50 +1,59 @@
-import type { InferValue } from '@optique/core/parser';
-import type { Program } from '@optique/core/program';
-
-import { merge, object } from '@optique/core/constructs';
+import { object } from '@optique/core/constructs';
 import { option } from '@optique/core/primitives';
 import { string } from '@optique/core/valueparser';
-import { run, path } from '@optique/run';
-import { multiple, optional } from '@optique/core/modifiers';
+import { path } from '@optique/run';
+import { multiple, withDefault } from '@optique/core/modifiers';
 import { message } from '@optique/core/message';
+import { z } from 'zod';
 import express from 'express';
+import nodePath from 'node:path';
+import { bindConfig, createConfigContext } from '@optique/config';
+import { runWithConfig } from '@optique/config/run';
+import process from 'node:process';
 import { spawn } from 'child_process';
 import fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import nodePath from 'node:path';
 
-const PORT = process.env.PORT || 8067;
-const STREAM_DIR = process.env.STREAM_DIR || '/tmp/stream';
+import packageJson from './package.json' with { type: 'json' };
 
-const globalOptions = object('Global Options', {
-  config: optional(option('-c', '--config', path({ mustExist: true }))),
+const configSchema = z.object({
+  streamUrl: z.optional(
+    z.array(
+      z.union([
+        z.string(),
+        z.object({
+          name: z.optional(z.string()),
+          url: z.string(),
+        }),
+      ]),
+    ),
+  ),
+  outDir: z.optional(z.string()),
 });
 
-// Create a parser for --name option
-const urlParser = object({
-  streamUrl: multiple(option('--stream-url', string()), { min: 1 }),
-  outDir: optional(option('--out-dir', path())),
-});
+type Config = z.infer<typeof configSchema>;
 
-const cli = merge(globalOptions, urlParser);
+const configContext = createConfigContext({ schema: configSchema });
 
-type Config = InferValue<typeof cli>;
-
-const prog: Program<'sync', Config> = {
-  parser: cli,
-  metadata: {
-    name: 'mjpeg-to-m3u8',
-    version: '1.0.0',
-    brief: message`Restream a MJPEG stream as m3u8`,
-  },
-};
-
-// Run the parser with some example arguments
-const result = run(urlParser, {
-  help: 'both', // Both --help and help command
-  version: prog.metadata.version!, // Enable version display
-  aboveError: 'usage', // Show usage on errors
-  colors: true, // Colored output
+const cli = object({
+  config: withDefault(
+    option('-c', '--config', path({ mustExist: true, type: 'file' })),
+    nodePath.resolve(process.cwd(), './mjpeg-to-m3u8.config.json'),
+  ),
+  port: withDefault(
+    option('-p', '--port', path({ mustExist: true, type: 'file' })),
+    process.env.PORT || 8067,
+  ),
+  streamUrl: bindConfig(option('--stream-url', string()), {
+    context: configContext,
+    key: 'streamUrl',
+    default: process.env.STREAM_URL || '',
+  }),
+  outDir: bindConfig(option('--out-dir', path({ type: 'directory' })), {
+    context: configContext,
+    key: 'outDir',
+    default: process.env.OUT_DIR || '/tmp/stream',
+  }),
 });
 
 const restream = (streamUrl: string, outPath: string) => {
@@ -76,25 +85,82 @@ const restream = (streamUrl: string, outPath: string) => {
   );
 };
 
-const basePath = result.outDir ?? STREAM_DIR;
+const startStreams = (
+  streamUrl: Config['streamUrl'] | string,
+  outDir: string,
+) => {
+  if (Array.isArray(streamUrl)) {
+    // unfortunately the type for result is `CliOptions` instead of `CliOptions & Config` so cast it
+    return streamUrl.map((streamUrl, index) => {
+      if (typeof streamUrl === 'string') {
+        return restream(streamUrl, `${outDir}/stream-${index}`);
+      } else {
+        const name = streamUrl.name;
+        return restream(
+          streamUrl.url,
+          name === undefined
+            ? `${outDir}/stream-${index}`
+            : `${outDir}/${name}`,
+        );
+      }
+    });
+  } else {
+    return [restream(streamUrl!, outDir)];
+  }
+};
 
-const streams = result.streamUrl.map((streamUrl, index) =>
-  restream(streamUrl, `${basePath}/stream-${index}`),
-);
+try {
+  const { streamUrl, config, outDir, port } = await runWithConfig(
+    cli,
+    configContext,
+    {
+      getConfigPath: (parsed) => {
+        if (process.env.DEBUG) {
+          console.log(parsed);
+        }
+        return parsed.config;
+      },
+      help: { mode: 'option' },
+      version: {
+        value: packageJson.version,
+        mode: 'option',
+      },
+      completion: {
+        mode: 'option',
+      },
+      aboveError: 'usage', // Show usage on errors
+      showDefault: true,
+      programName: 'mjpeg-to-m3u8',
+      brief: message`Restream a MJPEG stream as m3u8`,
+      colors: true, // Colored output
+      args: process.argv.slice(2),
+    },
+  );
+  if (process.env.DEBUG) {
+    console.log({ streamUrl, config, outDir, port });
+  }
 
-const app = express();
-app.use(express.static(nodePath.resolve(basePath)));
+  const streams = startStreams(
+    streamUrl as string & Config['streamUrl'],
+    outDir,
+  );
 
-const server = app.listen(PORT, () => {
-  console.log(`Serving ${basePath} on http://localhost:${PORT}`);
-});
+  const app = express();
+  app.use(express.static(nodePath.resolve(outDir)));
 
-process.on('SIGTERM', () => {
-  server.close(() => {
-    console.log('Finished all requests');
+  const server = app.listen(port, () => {
+    console.log(`Serving ${outDir} on http://localhost:${port}`);
   });
-  streams.map((stream) => {
-    stream.kill();
+
+  process.on('SIGTERM', () => {
+    server.close(() => {
+      console.log('Express server stopped');
+    });
+    streams.map((stream) => {
+      stream.kill();
+    });
+    process.exit();
   });
-  process.exit();
-});
+} catch (err) {
+  console.error('Could not parse config file', err);
+}

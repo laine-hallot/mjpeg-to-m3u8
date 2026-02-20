@@ -7,8 +7,7 @@
     "mjpeg-to-m3u8": "./bin/mjpeg-to-m3u8"
   },
   "scripts": {
-    "build": "tsc",
-    "run:dev": "node ./dist/index.js -- --out-dir ./out/"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "Laine Hallot",
@@ -21,19 +20,21 @@
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
-    "@optique/config": "^0.10.3",
-    "@optique/core": "^0.10.3",
-    "@optique/man": "^0.10.3",
-    "@optique/run": "^0.10.3",
-    "@optique/zod": "^0.10.3",
+    "@optique/config": "^0.10.6",
+    "@optique/core": "^0.10.6",
+    "@optique/man": "^0.10.6",
+    "@optique/run": "^0.10.6",
+    "@optique/zod": "^0.10.6",
+    "@standard-schema/spec": "^1.1.0",
     "express": "^5.2.1",
-    "serve-index": "^1.9.2"
+    "serve-index": "^1.9.2",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^25.3.0",
     "@types/serve-index": "^1.9.4",
     "prettier": "^3.8.1",
-    "typescript": "^6.0.0-beta"
+    "typescript": "^5.0.0"
   }
 }
