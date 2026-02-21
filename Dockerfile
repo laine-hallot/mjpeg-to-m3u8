@@ -19,6 +19,7 @@ WORKDIR /app/
 
 # Copy the binary from builder stage
 COPY --from=build /app/dist/ ./dist/
+COPY --from=build /app/bin/ ./bin/
 COPY --from=build /app/node_modules/ ./node_modules/
 
 RUN mkdir -p /tmp/stream
@@ -26,4 +27,4 @@ RUN mkdir -p /tmp/stream
 EXPOSE 8067
 
 ENTRYPOINT []
-CMD ["/bin/sh", "-c", "node dist/index.js --out-dir /tmp/stream"]
+CMD ["/bin/sh", "-c", "./bin/mjpeg-to-m3u8.js"]

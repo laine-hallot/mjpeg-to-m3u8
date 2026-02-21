@@ -105,6 +105,9 @@ try {
       args: process.argv.slice(2),
     },
   );
+  if (streamUrl === '') {
+    console.log('--stream-url is an empty string');
+  }
   if (process.env.DEBUG) {
     console.log({ streamUrl, config, outDir, port });
   }
